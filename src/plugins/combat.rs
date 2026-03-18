@@ -9,7 +9,7 @@ use crate::states::GameState;
 use crate::systems::GameSystemSet;
 
 const AIM_ASSIST_STRENGTH: f32 = 0.10;
-const AIM_ASSIST_CONE: f32 = 0.5; // ~28 degrees half-angle (radians)
+const AIM_ASSIST_CONE: f32 = 0.5;
 const AIM_ASSIST_RANGE: f32 = 400.0;
 
 pub struct CombatPlugin;
@@ -21,6 +21,7 @@ impl Plugin for CombatPlugin {
             (
                 player_shoot.in_set(GameSystemSet::Combat),
                 move_projectiles.in_set(GameSystemSet::Combat),
+                bounce_projectiles.in_set(GameSystemSet::Combat).after(move_projectiles),
                 expire_projectiles.in_set(GameSystemSet::Cleanup),
             )
                 .run_if(in_state(GameState::Playing)),
@@ -47,7 +48,6 @@ fn player_shoot(
     let aim_dir = Vec2::new(heading.0.cos(), heading.0.sin());
     let player_pos = transform.translation.truncate();
 
-    // Find nearest cell within aim cone for aim assist
     let mut best_target: Option<Vec2> = None;
     let mut best_dist = f32::MAX;
 
@@ -69,7 +69,6 @@ fn player_shoot(
         }
     }
 
-    // Blend aim direction toward target by 10%
     let final_dir = if let Some(target_dir) = best_target {
         let blended = aim_dir * (1.0 - AIM_ASSIST_STRENGTH) + target_dir * AIM_ASSIST_STRENGTH;
         blended.normalize()
@@ -79,9 +78,14 @@ fn player_shoot(
 
     let spawn_pos = transform.translation + (final_dir * 15.0).extend(0.0);
 
+    // Max distance = arena diagonal
+    let diagonal = (config.arena_half_width * 2.0).hypot(config.arena_half_height * 2.0);
+
     commands.spawn((
         Projectile {
-            lifetime: config.projectile_lifetime,
+            distance_traveled: 0.0,
+            max_distance: diagonal,
+            bounces_left: 1,
         },
         Velocity(final_dir * config.projectile_speed),
         Sprite {
@@ -94,23 +98,64 @@ fn player_shoot(
 }
 
 fn move_projectiles(
-    mut query: Query<(&Velocity, &mut Transform), With<Projectile>>,
+    mut query: Query<(&Velocity, &mut Transform, &mut Projectile)>,
     time: Res<Time>,
 ) {
-    for (velocity, mut transform) in &mut query {
-        transform.translation.x += velocity.x * time.delta_secs();
-        transform.translation.y += velocity.y * time.delta_secs();
+    for (velocity, mut transform, mut projectile) in &mut query {
+        let delta = Vec2::new(velocity.x, velocity.y) * time.delta_secs();
+        transform.translation.x += delta.x;
+        transform.translation.y += delta.y;
+        projectile.distance_traveled += delta.length();
+    }
+}
+
+fn bounce_projectiles(
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut Velocity, &mut Transform, &mut Projectile)>,
+    config: Res<GameConfig>,
+) {
+    let hw = config.arena_half_width;
+    let hh = config.arena_half_height;
+
+    for (entity, mut velocity, mut transform, mut projectile) in &mut query {
+        let mut hit_wall = false;
+
+        if transform.translation.x > hw {
+            transform.translation.x = hw;
+            velocity.x = -velocity.x.abs();
+            hit_wall = true;
+        } else if transform.translation.x < -hw {
+            transform.translation.x = -hw;
+            velocity.x = velocity.x.abs();
+            hit_wall = true;
+        }
+
+        if transform.translation.y > hh {
+            transform.translation.y = hh;
+            velocity.y = -velocity.y.abs();
+            hit_wall = true;
+        } else if transform.translation.y < -hh {
+            transform.translation.y = -hh;
+            velocity.y = velocity.y.abs();
+            hit_wall = true;
+        }
+
+        if hit_wall {
+            if projectile.bounces_left == 0 {
+                commands.entity(entity).despawn();
+            } else {
+                projectile.bounces_left -= 1;
+            }
+        }
     }
 }
 
 fn expire_projectiles(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut Projectile)>,
-    time: Res<Time>,
+    query: Query<(Entity, &Projectile)>,
 ) {
-    for (entity, mut projectile) in &mut query {
-        projectile.lifetime -= time.delta_secs();
-        if projectile.lifetime <= 0.0 {
+    for (entity, projectile) in &query {
+        if projectile.distance_traveled >= projectile.max_distance {
             commands.entity(entity).despawn();
         }
     }

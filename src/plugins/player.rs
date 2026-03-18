@@ -27,23 +27,45 @@ impl Plugin for PlayerPlugin {
 }
 
 fn spawn_player(mut commands: Commands) {
-    commands.spawn((
-        Player,
-        Heading(0.0),
-        Thrusting(false),
-        Boosting(false),
-        BoostFuel::default(),
-        Velocity::default(),
-        PlayerStats::default(),
-        TailChain::default(),
-        PositionHistory::default(),
-        Sprite {
-            color: Color::srgb(0.2, 0.6, 1.0),
-            custom_size: Some(Vec2::new(24.0, 14.0)),
-            ..default()
-        },
-        Transform::from_translation(Vec3::ZERO),
-    ));
+    commands
+        .spawn((
+            Player,
+            Heading(0.0),
+            Thrusting(false),
+            Boosting(false),
+            BoostFuel::default(),
+            Velocity::default(),
+            PlayerStats::default(),
+            TailChain::default(),
+            PositionHistory::default(),
+            // Body
+            Sprite {
+                color: Color::srgb(0.15, 0.45, 0.9),
+                custom_size: Some(Vec2::new(22.0, 14.0)),
+                ..default()
+            },
+            Transform::from_translation(Vec3::ZERO),
+        ))
+        .with_children(|parent| {
+            // Nose / cockpit — bright triangle-ish front indicator
+            parent.spawn((
+                Sprite {
+                    color: Color::srgb(0.0, 1.0, 1.0),
+                    custom_size: Some(Vec2::new(10.0, 6.0)),
+                    ..default()
+                },
+                Transform::from_translation(Vec3::new(12.0, 0.0, 0.1)),
+            ));
+            // Engine glow — rear indicator (dim red)
+            parent.spawn((
+                Sprite {
+                    color: Color::srgb(0.6, 0.1, 0.1),
+                    custom_size: Some(Vec2::new(5.0, 10.0)),
+                    ..default()
+                },
+                Transform::from_translation(Vec3::new(-13.0, 0.0, 0.1)),
+            ));
+        });
 }
 
 fn player_input(

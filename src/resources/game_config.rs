@@ -14,7 +14,6 @@ pub struct GameConfig {
     pub drift_friction: f32,
     // Combat
     pub projectile_speed: f32,
-    pub projectile_lifetime: f32,
     // Tail
     pub player_base_mass: f32,
     pub mass_per_segment: f32,
@@ -38,7 +37,6 @@ impl Default for GameConfig {
             friction: 0.985,
             drift_friction: 0.95,
             projectile_speed: 700.0,
-            projectile_lifetime: 1.5,
             player_base_mass: 1.0,
             mass_per_segment: 0.08,
             arena_half_width: 500.0,

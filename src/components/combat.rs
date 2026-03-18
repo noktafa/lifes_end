@@ -2,7 +2,9 @@ use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct Projectile {
-    pub lifetime: f32,
+    pub distance_traveled: f32,
+    pub max_distance: f32,
+    pub bounces_left: u8,
 }
 
 #[derive(Event)]

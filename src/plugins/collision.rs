@@ -51,9 +51,11 @@ fn check_projectile_cell_collisions(
 }
 
 fn check_player_cell_collisions(
+    mut commands: Commands,
     player: Query<&Transform, With<Player>>,
-    cells: Query<&Transform, With<LifeCell>>,
-    mut next_state: ResMut<NextState<GameState>>,
+    cells: Query<(Entity, &Transform, &CellPosition), With<LifeCell>>,
+    mut grid: ResMut<LifeGrid>,
+    mut cell_destroyed: EventWriter<CellDestroyed>,
     config: Res<GameConfig>,
 ) {
     let Ok(player_transform) = player.get_single() else {
@@ -62,10 +64,13 @@ fn check_player_cell_collisions(
     let player_pos = player_transform.translation.truncate();
     let hit_radius = config.cell_size * 0.6;
 
-    for cell_transform in &cells {
-        let cell_pos = cell_transform.translation.truncate();
-        if player_pos.distance(cell_pos) < hit_radius {
-            next_state.set(GameState::GameOver);
+    for (cell_entity, cell_transform, cell_pos) in &cells {
+        let cell_world = cell_transform.translation.truncate();
+        if player_pos.distance(cell_world) < hit_radius {
+            // Ram = destroy the cell, not the player
+            commands.entity(cell_entity).despawn();
+            grid.alive_cells.remove(&(cell_pos.x, cell_pos.y));
+            cell_destroyed.send(CellDestroyed);
             return;
         }
     }

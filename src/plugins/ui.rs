@@ -246,12 +246,12 @@ fn update_hud(
             }
         }
 
-        // Player sprite color: glow orange when boosting
+        // Player body color: glow orange when boosting
         if let Ok(mut sprite) = player_sprite.get_single_mut() {
             if boosting.0 {
-                sprite.color = Color::srgb(1.0, 0.6, 0.1);
+                sprite.color = Color::srgb(1.0, 0.5, 0.05);
             } else {
-                sprite.color = Color::srgb(0.2, 0.6, 1.0);
+                sprite.color = Color::srgb(0.15, 0.45, 0.9);
             }
         }
     }
