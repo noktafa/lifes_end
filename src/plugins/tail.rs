@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 
 use crate::components::combat::CellDestroyed;
-use crate::components::gol::LifeCell;
+use crate::components::gol::*;
 use crate::components::player::*;
 use crate::components::tail::*;
 use crate::resources::game_config::GameConfig;
+use crate::resources::gol_grid::LifeGrid;
 use crate::states::GameState;
 use crate::systems::GameSystemSet;
 
@@ -98,19 +99,23 @@ fn grow_tail(
 
 fn check_tail_cell_collisions(
     segments: Query<&Transform, With<TailSegment>>,
-    cells: Query<&Transform, With<LifeCell>>,
-    mut next_state: ResMut<NextState<GameState>>,
+    cells: Query<(Entity, &Transform, &CellPosition), With<LifeCell>>,
+    mut commands: Commands,
+    mut grid: ResMut<LifeGrid>,
+    mut cell_destroyed: EventWriter<CellDestroyed>,
     config: Res<GameConfig>,
 ) {
     let hit_radius = config.cell_size * 0.6;
 
     for seg_transform in &segments {
         let seg_pos = seg_transform.translation.truncate();
-        for cell_transform in &cells {
+        for (cell_entity, cell_transform, cell_pos) in &cells {
             let dist = seg_pos.distance(cell_transform.translation.truncate());
             if dist < hit_radius {
-                next_state.set(GameState::GameOver);
-                return;
+                // Tail whip — destroy the cell
+                commands.entity(cell_entity).despawn();
+                grid.alive_cells.remove(&(cell_pos.x, cell_pos.y));
+                cell_destroyed.send(CellDestroyed);
             }
         }
     }
