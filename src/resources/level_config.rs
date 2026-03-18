@@ -76,9 +76,9 @@ pub fn get_level(level_number: usize) -> (Vec<PatternPlacement>, Vec<WaveConfig>
         1 => (
             // Tutorial: just some still lifes and a blinker
             vec![
-                PatternPlacement { cells: block(), offset: (5, 5) },
-                PatternPlacement { cells: block(), offset: (-5, -5) },
-                PatternPlacement { cells: blinker(), offset: (10, 0) },
+                PatternPlacement { cells: block(), offset: (12, 10) },
+                PatternPlacement { cells: block(), offset: (-12, -10) },
+                PatternPlacement { cells: blinker(), offset: (15, 0) },
             ],
             vec![],
             0.4,
@@ -86,10 +86,10 @@ pub fn get_level(level_number: usize) -> (Vec<PatternPlacement>, Vec<WaveConfig>
         2 => (
             // Oscillators
             vec![
-                PatternPlacement { cells: blinker(), offset: (8, 0) },
-                PatternPlacement { cells: toad(), offset: (-8, 5) },
-                PatternPlacement { cells: beacon(), offset: (0, -8) },
-                PatternPlacement { cells: block(), offset: (12, 12) },
+                PatternPlacement { cells: blinker(), offset: (14, 0) },
+                PatternPlacement { cells: toad(), offset: (-14, 8) },
+                PatternPlacement { cells: beacon(), offset: (0, -12) },
+                PatternPlacement { cells: block(), offset: (16, 14) },
             ],
             vec![],
             0.35,
@@ -97,9 +97,9 @@ pub fn get_level(level_number: usize) -> (Vec<PatternPlacement>, Vec<WaveConfig>
         3 => (
             // First glider
             vec![
-                PatternPlacement { cells: glider(), offset: (-12, -8) },
-                PatternPlacement { cells: block(), offset: (8, 8) },
-                PatternPlacement { cells: blinker(), offset: (-6, 10) },
+                PatternPlacement { cells: glider(), offset: (-18, -12) },
+                PatternPlacement { cells: block(), offset: (14, 12) },
+                PatternPlacement { cells: blinker(), offset: (-10, 14) },
             ],
             vec![
                 WaveConfig {
@@ -114,10 +114,10 @@ pub fn get_level(level_number: usize) -> (Vec<PatternPlacement>, Vec<WaveConfig>
         4 => (
             // Multiple gliders
             vec![
-                PatternPlacement { cells: glider(), offset: (-15, -10) },
-                PatternPlacement { cells: glider(), offset: (10, 12) },
-                PatternPlacement { cells: toad(), offset: (0, 0) },
-                PatternPlacement { cells: beacon(), offset: (-10, 8) },
+                PatternPlacement { cells: glider(), offset: (-18, -12) },
+                PatternPlacement { cells: glider(), offset: (14, 14) },
+                PatternPlacement { cells: toad(), offset: (8, -14) },
+                PatternPlacement { cells: beacon(), offset: (-14, 10) },
             ],
             vec![
                 WaveConfig {
@@ -133,7 +133,7 @@ pub fn get_level(level_number: usize) -> (Vec<PatternPlacement>, Vec<WaveConfig>
         5 => (
             // R-pentomino (chaotic)
             vec![
-                PatternPlacement { cells: r_pentomino(), offset: (0, 0) },
+                PatternPlacement { cells: r_pentomino(), offset: (12, 10) },
             ],
             vec![],
             0.2,
@@ -141,10 +141,10 @@ pub fn get_level(level_number: usize) -> (Vec<PatternPlacement>, Vec<WaveConfig>
         6 => (
             // Spaceships
             vec![
-                PatternPlacement { cells: lwss(), offset: (-15, 5) },
-                PatternPlacement { cells: glider(), offset: (12, -8) },
-                PatternPlacement { cells: glider(), offset: (-8, 12) },
-                PatternPlacement { cells: block(), offset: (0, 0) },
+                PatternPlacement { cells: lwss(), offset: (-18, 8) },
+                PatternPlacement { cells: glider(), offset: (16, -10) },
+                PatternPlacement { cells: glider(), offset: (-10, 14) },
+                PatternPlacement { cells: block(), offset: (8, -14) },
             ],
             vec![
                 WaveConfig {
@@ -159,8 +159,8 @@ pub fn get_level(level_number: usize) -> (Vec<PatternPlacement>, Vec<WaveConfig>
         7 => (
             // Pulsar - complex oscillator
             vec![
-                PatternPlacement { cells: pulsar(), offset: (-6, -6) },
-                PatternPlacement { cells: glider(), offset: (15, 15) },
+                PatternPlacement { cells: pulsar(), offset: (-6, 10) },
+                PatternPlacement { cells: glider(), offset: (18, -12) },
             ],
             vec![
                 WaveConfig {
@@ -195,8 +195,8 @@ pub fn get_level(level_number: usize) -> (Vec<PatternPlacement>, Vec<WaveConfig>
         _ => {
             let n = level_number;
             let mut patterns = vec![
-                PatternPlacement { cells: r_pentomino(), offset: (0, 0) },
-                PatternPlacement { cells: pulsar(), offset: (-(n as i32) * 3, n as i32 * 3) },
+                PatternPlacement { cells: r_pentomino(), offset: (12, 10) },
+                PatternPlacement { cells: pulsar(), offset: (-(n as i32) * 2, n as i32 * 2) },
             ];
             for i in 0..((n - 8).min(5)) {
                 let angle = (i as f32) * std::f32::consts::TAU / 5.0;

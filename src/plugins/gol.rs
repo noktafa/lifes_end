@@ -28,6 +28,7 @@ impl Plugin for GolPlugin {
 fn setup_gol(
     mut commands: Commands,
     existing_level: Option<Res<CurrentLevel>>,
+    config: Res<GameConfig>,
 ) {
     let level_number = existing_level
         .map(|l| l.level_number)
@@ -35,10 +36,15 @@ fn setup_gol(
 
     let (patterns, waves, tick_rate) = get_level(level_number);
 
-    let mut grid = LifeGrid::new(tick_rate);
+    let grid_hw = (config.arena_half_width / config.cell_size) as i32;
+    let grid_hh = (config.arena_half_height / config.cell_size) as i32;
+    let mut grid = LifeGrid::new(tick_rate, (grid_hw, grid_hh));
     for pattern in &patterns {
         grid.add_pattern(&pattern.cells, pattern.offset);
     }
+
+    // Clear cells near player spawn (0,0) so you don't instantly die
+    grid.clear_radius((0, 0), config.safe_spawn_radius as i32);
 
     commands.insert_resource(grid);
     commands.insert_resource(CurrentLevel {

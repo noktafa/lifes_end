@@ -17,7 +17,9 @@ impl Plugin for PlayerPlugin {
                 (
                     player_input.in_set(GameSystemSet::Input),
                     apply_thrust.in_set(GameSystemSet::Physics),
-                    apply_velocity.in_set(GameSystemSet::Physics),
+                    apply_friction.in_set(GameSystemSet::Physics).after(apply_thrust),
+                    apply_velocity.in_set(GameSystemSet::Physics).after(apply_friction),
+                    bounce_walls.in_set(GameSystemSet::Physics).after(apply_velocity),
                     sync_player_rotation.in_set(GameSystemSet::Physics),
                 )
                     .run_if(in_state(GameState::Playing)),
@@ -66,6 +68,7 @@ fn player_input(
 }
 
 fn apply_thrust(
+    keyboard: Res<ButtonInput<KeyCode>>,
     mut query: Query<(&Heading, &Thrusting, &PlayerStats, &mut Velocity), With<Player>>,
     config: Res<GameConfig>,
     time: Res<Time>,
@@ -80,9 +83,35 @@ fn apply_thrust(
         velocity.0 += acceleration * time.delta_secs();
     }
 
+    // Reverse thrust / brake
+    if keyboard.pressed(KeyCode::KeyS) || keyboard.pressed(KeyCode::ArrowDown) {
+        let speed = velocity.0.length();
+        if speed > 1.0 {
+            let brake = velocity.0.normalize() * (config.brake_force / stats.mass) * time.delta_secs();
+            if brake.length() >= speed {
+                velocity.0 = Vec2::ZERO;
+            } else {
+                velocity.0 -= brake;
+            }
+        }
+    }
+
     let speed = velocity.0.length();
     if speed > config.max_velocity {
         velocity.0 = velocity.0.normalize() * config.max_velocity;
+    }
+}
+
+fn apply_friction(
+    mut query: Query<&mut Velocity, With<Player>>,
+    config: Res<GameConfig>,
+) {
+    let Ok(mut velocity) = query.get_single_mut() else {
+        return;
+    };
+    velocity.0 *= config.friction;
+    if velocity.0.length() < 0.5 {
+        velocity.0 = Vec2::ZERO;
     }
 }
 
@@ -93,6 +122,34 @@ fn apply_velocity(
     for (velocity, mut transform) in &mut query {
         transform.translation.x += velocity.x * time.delta_secs();
         transform.translation.y += velocity.y * time.delta_secs();
+    }
+}
+
+fn bounce_walls(
+    mut query: Query<(&mut Velocity, &mut Transform), With<Player>>,
+    config: Res<GameConfig>,
+) {
+    let Ok((mut velocity, mut transform)) = query.get_single_mut() else {
+        return;
+    };
+
+    let hw = config.arena_half_width;
+    let hh = config.arena_half_height;
+
+    if transform.translation.x > hw {
+        transform.translation.x = hw;
+        velocity.x = -velocity.x.abs() * config.bounce_damping;
+    } else if transform.translation.x < -hw {
+        transform.translation.x = -hw;
+        velocity.x = velocity.x.abs() * config.bounce_damping;
+    }
+
+    if transform.translation.y > hh {
+        transform.translation.y = hh;
+        velocity.y = -velocity.y.abs() * config.bounce_damping;
+    } else if transform.translation.y < -hh {
+        transform.translation.y = -hh;
+        velocity.y = velocity.y.abs() * config.bounce_damping;
     }
 }
 
