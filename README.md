@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>A 2D action game where your only mission is to exterminate all life.</strong>
+  <strong>A nihilistic virus, destined to destroy all possible life.</strong>
 </p>
 
 <p align="center">
@@ -153,5 +153,5 @@ src/
 ---
 
 <p align="center">
-  <sub>Built with Rust, Bevy, and a deep philosophical commitment to entropy.</sub>
+  <sub>You are the virus. Life is the disease. There is no cure — only you.</sub>
 </p>
