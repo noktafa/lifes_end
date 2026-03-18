@@ -101,4 +101,90 @@ impl LifeGrid {
             dx * dx + dy * dy > radius * radius
         });
     }
+
+    /// Find connected groups of cells (8-connectivity flood fill).
+    pub fn find_groups(&self) -> Vec<Vec<(i32, i32)>> {
+        let mut visited: HashSet<(i32, i32)> = HashSet::new();
+        let mut groups: Vec<Vec<(i32, i32)>> = Vec::new();
+
+        for &cell in &self.alive_cells {
+            if visited.contains(&cell) {
+                continue;
+            }
+            // BFS flood fill
+            let mut group = Vec::new();
+            let mut queue = std::collections::VecDeque::new();
+            queue.push_back(cell);
+            visited.insert(cell);
+
+            while let Some(pos) = queue.pop_front() {
+                group.push(pos);
+                for dx in -1..=1 {
+                    for dy in -1..=1 {
+                        if dx == 0 && dy == 0 {
+                            continue;
+                        }
+                        let neighbor = (pos.0 + dx, pos.1 + dy);
+                        if self.alive_cells.contains(&neighbor) && !visited.contains(&neighbor) {
+                            visited.insert(neighbor);
+                            queue.push_back(neighbor);
+                        }
+                    }
+                }
+            }
+            groups.push(group);
+        }
+        groups
+    }
+
+    /// Nuke: for each enemy group, delete 3 random cells then add 5 adjacent to remaining.
+    pub fn nuke(&mut self) {
+        let mut rng = rand::thread_rng();
+        let (bw, bh) = self.bounds;
+        let groups = self.find_groups();
+
+        for mut group in groups {
+            // Delete up to 3 random cells from this group
+            let delete_count = group.len().min(3);
+            for _ in 0..delete_count {
+                if group.is_empty() {
+                    break;
+                }
+                let idx = rng.gen_range(0..group.len());
+                let removed = group.swap_remove(idx);
+                self.alive_cells.remove(&removed);
+                self.cell_age.remove(&removed);
+            }
+
+            // Add 5 random adjacent cells to the remaining group members
+            if group.is_empty() {
+                continue;
+            }
+            let group_set: HashSet<(i32, i32)> = group.iter().copied().collect();
+            let mut added = 0;
+            let mut attempts = 0;
+            while added < 5 && attempts < 50 {
+                attempts += 1;
+                // Pick a random cell from the group
+                let anchor = group[rng.gen_range(0..group.len())];
+                // Pick a random neighbor direction
+                let dx = rng.gen_range(-1..=1_i32);
+                let dy = rng.gen_range(-1..=1_i32);
+                if dx == 0 && dy == 0 {
+                    continue;
+                }
+                let new_pos = (anchor.0 + dx, anchor.1 + dy);
+                // Must be in bounds, not already alive, not in the original group
+                if new_pos.0.abs() > bw || new_pos.1.abs() > bh {
+                    continue;
+                }
+                if self.alive_cells.contains(&new_pos) || group_set.contains(&new_pos) {
+                    continue;
+                }
+                self.alive_cells.insert(new_pos);
+                self.cell_age.insert(new_pos, 0);
+                added += 1;
+            }
+        }
+    }
 }

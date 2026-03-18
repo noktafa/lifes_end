@@ -9,3 +9,6 @@ pub struct Projectile {
 
 #[derive(Event)]
 pub struct CellDestroyed;
+
+#[derive(Event)]
+pub struct NukeActivated;

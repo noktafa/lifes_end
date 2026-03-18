@@ -31,6 +31,9 @@ struct HudBoostBar;
 struct HudBoostFill;
 
 #[derive(Component)]
+struct HudNukeIndicator;
+
+#[derive(Component)]
 struct GameOverUi;
 
 #[derive(Component)]
@@ -94,7 +97,7 @@ fn setup_menu(mut commands: Commands) {
                 TextColor(Color::srgb(0.7, 0.7, 0.7)),
             ));
             parent.spawn((
-                Text::new("WASD: Move  |  SHIFT: Boost  |  SPACE/Click: Shoot  |  S: Brake"),
+                Text::new("WASD: Move  |  SHIFT: Boost  |  SPACE/Click: Shoot  |  S: Brake  |  Q: Nuke"),
                 TextFont {
                     font_size: 16.0,
                     ..default()
@@ -208,6 +211,16 @@ fn setup_hud(mut commands: Commands, level: Option<Res<CurrentLevel>>) {
                         BackgroundColor(Color::srgb(0.0, 0.8, 1.0)),
                     ));
                 });
+            // Nuke indicator
+            parent.spawn((
+                HudNukeIndicator,
+                Text::new("[Q] NUKE"),
+                TextFont {
+                    font_size: 14.0,
+                    ..default()
+                },
+                TextColor(Color::srgba(0.4, 0.4, 0.4, 0.4)),
+            ));
         });
 }
 
@@ -216,9 +229,10 @@ fn update_hud(
     player: Query<(&TailChain, &BoostFuel, &Boosting), With<Player>>,
     mut player_sprite: Query<&mut Sprite, With<Player>>,
     mut cell_text: Query<(&mut Text, &mut TextColor), With<HudCellCount>>,
-    mut tail_text: Query<&mut Text, (With<HudTailLength>, Without<HudCellCount>)>,
+    mut tail_text: Query<&mut Text, (With<HudTailLength>, Without<HudCellCount>, Without<HudNukeIndicator>)>,
     mut boost_fill: Query<&mut Node, With<HudBoostFill>>,
     mut boost_bg: Query<&mut BackgroundColor, With<HudBoostFill>>,
+    mut nuke_text: Query<&mut TextColor, (With<HudNukeIndicator>, Without<HudCellCount>)>,
     config: Res<GameConfig>,
 ) {
     let cell_count = cells.iter().count();
@@ -236,8 +250,20 @@ fn update_hud(
     }
 
     if let Ok((chain, fuel, boosting)) = player.get_single() {
+        let tail_len = chain.segments.len();
+        let nuke_ready = tail_len >= 10;
+
         if let Ok(mut text) = tail_text.get_single_mut() {
-            **text = format!("Tail: {}", chain.segments.len());
+            **text = format!("Tail: {}", tail_len);
+        }
+
+        // Nuke indicator: bright when ready, dim when not
+        if let Ok(mut color) = nuke_text.get_single_mut() {
+            if nuke_ready {
+                color.0 = Color::srgb(1.0, 0.3, 0.1); // Bright orange-red
+            } else {
+                color.0 = Color::srgba(0.4, 0.4, 0.4, 0.4); // Dim
+            }
         }
 
         // Boost bar width

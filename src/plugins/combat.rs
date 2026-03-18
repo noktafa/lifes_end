@@ -4,7 +4,9 @@ use crate::components::combat::*;
 use crate::components::common::Velocity;
 use crate::components::gol::LifeCell;
 use crate::components::player::*;
+use crate::components::tail::*;
 use crate::resources::game_config::GameConfig;
+use crate::resources::gol_grid::LifeGrid;
 use crate::states::GameState;
 use crate::systems::GameSystemSet;
 
@@ -16,16 +18,20 @@ pub struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<CellDestroyed>().add_systems(
-            Update,
-            (
-                player_shoot.in_set(GameSystemSet::Combat),
-                move_projectiles.in_set(GameSystemSet::Combat),
-                bounce_projectiles.in_set(GameSystemSet::Combat).after(move_projectiles),
-                expire_projectiles.in_set(GameSystemSet::Cleanup),
-            )
-                .run_if(in_state(GameState::Playing)),
-        );
+        app.add_event::<CellDestroyed>()
+            .add_event::<NukeActivated>()
+            .add_systems(
+                Update,
+                (
+                    player_shoot.in_set(GameSystemSet::Combat),
+                    nuke_input.in_set(GameSystemSet::Combat),
+                    apply_nuke.in_set(GameSystemSet::Combat).after(nuke_input),
+                    move_projectiles.in_set(GameSystemSet::Combat),
+                    bounce_projectiles.in_set(GameSystemSet::Combat).after(move_projectiles),
+                    expire_projectiles.in_set(GameSystemSet::Cleanup),
+                )
+                    .run_if(in_state(GameState::Playing)),
+            );
     }
 }
 
@@ -159,4 +165,48 @@ fn expire_projectiles(
             commands.entity(entity).despawn();
         }
     }
+}
+
+const NUKE_COST: usize = 10;
+
+fn nuke_input(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    player: Query<&TailChain, With<Player>>,
+    mut nuke_events: EventWriter<NukeActivated>,
+) {
+    if !keyboard.just_pressed(KeyCode::KeyQ) {
+        return;
+    }
+    let Ok(chain) = player.get_single() else {
+        return;
+    };
+    if chain.segments.len() >= NUKE_COST {
+        nuke_events.send(NukeActivated);
+    }
+}
+
+fn apply_nuke(
+    mut commands: Commands,
+    mut nuke_events: EventReader<NukeActivated>,
+    mut player: Query<(&mut TailChain, &mut PositionHistory), With<Player>>,
+    segments: Query<Entity, With<TailSegment>>,
+    mut grid: ResMut<LifeGrid>,
+) {
+    if nuke_events.read().next().is_none() {
+        return;
+    }
+
+    // Sacrifice the entire tail
+    let Ok((mut chain, mut history)) = player.get_single_mut() else {
+        return;
+    };
+    for entity in segments.iter() {
+        commands.entity(entity).despawn();
+    }
+    chain.segments.clear();
+    history.positions.clear();
+    history.max_length = 100;
+
+    // Nuke all enemy groups
+    grid.nuke();
 }
