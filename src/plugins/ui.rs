@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use crate::components::gol::LifeCell;
+use crate::components::player::{BoostFuel, Boosting, Player};
 use crate::components::tail::TailChain;
-use crate::components::player::Player;
 use crate::resources::level_config::CurrentLevel;
 use crate::states::GameState;
 
@@ -22,6 +22,12 @@ struct HudTailLength;
 
 #[derive(Component)]
 struct HudLevelNumber;
+
+#[derive(Component)]
+struct HudBoostBar;
+
+#[derive(Component)]
+struct HudBoostFill;
 
 #[derive(Component)]
 struct GameOverUi;
@@ -87,12 +93,20 @@ fn setup_menu(mut commands: Commands) {
                 TextColor(Color::srgb(0.7, 0.7, 0.7)),
             ));
             parent.spawn((
-                Text::new("[SPACE] Start  |  WASD: Move  |  SPACE: Shoot"),
+                Text::new("WASD: Move  |  SHIFT: Boost  |  SPACE/Click: Shoot  |  S: Brake"),
                 TextFont {
-                    font_size: 18.0,
+                    font_size: 16.0,
                     ..default()
                 },
                 TextColor(Color::srgb(0.5, 0.5, 0.5)),
+            ));
+            parent.spawn((
+                Text::new("[SPACE] Start"),
+                TextFont {
+                    font_size: 20.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.0, 0.8, 1.0)),
             ));
         });
 }
@@ -105,6 +119,8 @@ fn menu_input(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextSt
 
 fn setup_hud(mut commands: Commands, level: Option<Res<CurrentLevel>>) {
     let level_num = level.map(|l| l.level_number).unwrap_or(1);
+
+    // Top bar: stats
     commands
         .spawn((
             HudUi,
@@ -144,22 +160,99 @@ fn setup_hud(mut commands: Commands, level: Option<Res<CurrentLevel>>) {
                 TextColor(Color::srgb(0.0, 1.0, 0.0)),
             ));
         });
+
+    // Bottom bar: boost meter
+    commands
+        .spawn((
+            HudUi,
+            Node {
+                width: Val::Percent(100.0),
+                position_type: PositionType::Absolute,
+                bottom: Val::Px(15.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                column_gap: Val::Px(8.0),
+                ..default()
+            },
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new("BOOST"),
+                TextFont {
+                    font_size: 14.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.6, 0.6, 0.6)),
+            ));
+            // Boost bar background
+            parent
+                .spawn((
+                    HudBoostBar,
+                    Node {
+                        width: Val::Px(200.0),
+                        height: Val::Px(10.0),
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgba(0.2, 0.2, 0.2, 0.8)),
+                ))
+                .with_children(|bar| {
+                    // Boost fill
+                    bar.spawn((
+                        HudBoostFill,
+                        Node {
+                            width: Val::Percent(100.0),
+                            height: Val::Percent(100.0),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgb(0.0, 0.8, 1.0)),
+                    ));
+                });
+        });
 }
 
 fn update_hud(
     cells: Query<&LifeCell>,
-    player: Query<&TailChain, With<Player>>,
+    player: Query<(&TailChain, &BoostFuel, &Boosting), With<Player>>,
+    mut player_sprite: Query<&mut Sprite, With<Player>>,
     mut cell_text: Query<&mut Text, With<HudCellCount>>,
     mut tail_text: Query<&mut Text, (With<HudTailLength>, Without<HudCellCount>)>,
+    mut boost_fill: Query<&mut Node, With<HudBoostFill>>,
+    mut boost_bg: Query<&mut BackgroundColor, With<HudBoostFill>>,
 ) {
     let cell_count = cells.iter().count();
     if let Ok(mut text) = cell_text.get_single_mut() {
         **text = format!("Cells: {}", cell_count);
     }
 
-    if let Ok(chain) = player.get_single() {
+    if let Ok((chain, fuel, boosting)) = player.get_single() {
         if let Ok(mut text) = tail_text.get_single_mut() {
             **text = format!("Tail: {}", chain.segments.len());
+        }
+
+        // Boost bar width
+        let pct = (fuel.current / fuel.max * 100.0).clamp(0.0, 100.0);
+        if let Ok(mut node) = boost_fill.get_single_mut() {
+            node.width = Val::Percent(pct);
+        }
+
+        // Boost bar color: cyan when full, orange when low
+        if let Ok(mut bg) = boost_bg.get_single_mut() {
+            if boosting.0 {
+                bg.0 = Color::srgb(1.0, 0.5, 0.0); // Orange while boosting
+            } else if pct < 25.0 {
+                bg.0 = Color::srgb(1.0, 0.2, 0.2); // Red when low
+            } else {
+                bg.0 = Color::srgb(0.0, 0.8, 1.0); // Cyan normal
+            }
+        }
+
+        // Player sprite color: glow orange when boosting
+        if let Ok(mut sprite) = player_sprite.get_single_mut() {
+            if boosting.0 {
+                sprite.color = Color::srgb(1.0, 0.6, 0.1);
+            } else {
+                sprite.color = Color::srgb(0.2, 0.6, 1.0);
+            }
         }
     }
 }
