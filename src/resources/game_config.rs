@@ -31,7 +31,7 @@ impl Default for GameConfig {
             thrust_force: 800.0,
             boost_force: 1800.0,
             brake_force: 600.0,
-            rotation_speed: 12.0,
+            rotation_speed: 3.8,
             max_velocity: 500.0,
             max_boost_velocity: 800.0,
             friction: 0.985,
