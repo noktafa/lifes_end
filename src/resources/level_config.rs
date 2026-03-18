@@ -27,10 +27,6 @@ pub fn glider() -> Vec<(i32, i32)> {
     vec![(0, 0), (1, 0), (2, 0), (2, 1), (1, 2)]
 }
 
-pub fn block() -> Vec<(i32, i32)> {
-    vec![(0, 0), (1, 0), (0, 1), (1, 1)]
-}
-
 pub fn blinker() -> Vec<(i32, i32)> {
     vec![(0, 0), (1, 0), (2, 0)]
 }
@@ -108,39 +104,36 @@ fn mutate_pattern(cells: &mut Vec<(i32, i32)>, count: usize) {
 
 /// Pick a random base pattern appropriate for the level.
 fn pick_pattern(rng: &mut impl Rng, level: usize) -> Vec<(i32, i32)> {
-    // Early levels: simple patterns. Later levels: more complex ones.
+    // No blocks — they're boring 2x2 still lifes
     if level <= 3 {
         match rng.gen_range(0..3) {
-            0 => block(),
-            1 => blinker(),
-            _ => toad(),
+            0 => blinker(),
+            1 => toad(),
+            _ => glider(),
         }
     } else if level <= 6 {
-        match rng.gen_range(0..5) {
-            0 => block(),
-            1 => blinker(),
-            2 => toad(),
-            3 => beacon(),
+        match rng.gen_range(0..4) {
+            0 => blinker(),
+            1 => toad(),
+            2 => beacon(),
             _ => glider(),
         }
     } else if level <= 10 {
-        match rng.gen_range(0..6) {
-            0 => blinker(),
-            1 => toad(),
-            2 => glider(),
-            3 => beacon(),
-            4 => r_pentomino(),
+        match rng.gen_range(0..5) {
+            0 => toad(),
+            1 => glider(),
+            2 => beacon(),
+            3 => r_pentomino(),
             _ => lwss(),
         }
     } else {
-        match rng.gen_range(0..7) {
+        match rng.gen_range(0..6) {
             0 => glider(),
             1 => toad(),
             2 => beacon(),
             3 => r_pentomino(),
             4 => lwss(),
-            5 => pulsar(),
-            _ => glider(),
+            _ => pulsar(),
         }
     }
 }
