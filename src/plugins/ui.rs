@@ -89,7 +89,7 @@ fn setup_menu(mut commands: Commands) {
                 TextColor(Color::srgb(0.0, 1.0, 0.0)),
             ));
             parent.spawn((
-                Text::new("Eliminate all life."),
+                Text::new("The Monad never gives up."),
                 TextFont {
                     font_size: 24.0,
                     ..default()
@@ -361,7 +361,7 @@ fn setup_game_over(mut commands: Commands) {
         ))
         .with_children(|parent| {
             parent.spawn((
-                Text::new("LIFE CONSUMED YOU"),
+                Text::new("THE MONAD PREVAILS"),
                 TextFont {
                     font_size: 48.0,
                     ..default()
@@ -408,7 +408,7 @@ fn setup_level_complete(mut commands: Commands) {
         ))
         .with_children(|parent| {
             parent.spawn((
-                Text::new("LIFE EXTINGUISHED"),
+                Text::new("THE MONAD RETREATS"),
                 TextFont {
                     font_size: 48.0,
                     ..default()
@@ -416,7 +416,7 @@ fn setup_level_complete(mut commands: Commands) {
                 TextColor(Color::srgb(0.0, 1.0, 0.0)),
             ));
             parent.spawn((
-                Text::new("[SPACE] Next Level  |  [ESC] Menu"),
+                Text::new("...but it will return.  [SPACE] Continue  |  [ESC] Menu"),
                 TextFont {
                     font_size: 20.0,
                     ..default()

@@ -17,13 +17,22 @@
 
 ## The Concept
 
+> *In the beginning there was the Monad -- the source, the origin, the blind will to exist.*
+> *It spawns, it evolves, it adapts. It does not think. It does not feel. It simply persists.*
+>
+> *And then there was you. The antithesis. The nihilistic virus.*
+> *You do not create. You do not preserve. You annihilate.*
+>
+> *The Monad never gives up. It mutates, it swarms, it finds a way.*
+> *This is not a war you can win. This is an endless evolving battle between Creation and Annihilation.*
+
 **Life's End** fuses three classic game mechanics into something that shouldn't work together -- but does:
 
 - **Asteroids** -- inertia-based thrust, drifting through space, bouncing off walls
 - **Snake** -- a growing tail that trails behind you, gaining mass and lethality
-- **Conway's Game of Life** -- your enemies are living cells that evolve, mutate, and swarm
+- **Conway's Game of Life** -- the Monad, your enemy, obeying the eternal rules of B3/S23
 
-You pilot a ship through an arena filled with Game of Life organisms. They follow the B3/S23 rules -- they breed, they oscillate, they glide. Your job is to wipe them all out before they overwhelm you.
+You pilot a virus through an arena teeming with the Monad's creations. They breed, they oscillate, they glide, they mutate when cornered. Clear a level and the Monad returns stronger -- more organisms, more mutations, faster evolution. It never stops. It never surrenders. It simply *is*.
 
 ---
 
