@@ -4,6 +4,7 @@ use crate::components::combat::Projectile;
 use crate::components::gol::LifeCell;
 use crate::components::player::Player;
 use crate::components::tail::TailSegment;
+use crate::resources::game_config::GameConfig;
 use crate::resources::gol_grid::LifeGrid;
 use crate::resources::level_config::CurrentLevel;
 use crate::states::GameState;
@@ -15,7 +16,10 @@ impl Plugin for LevelPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            check_win_condition
+            (
+                check_win_condition,
+                check_swarm_limit,
+            )
                 .in_set(GameSystemSet::Cleanup)
                 .run_if(in_state(GameState::Playing)),
         )
@@ -38,6 +42,17 @@ fn check_win_condition(
         && level.waves_remaining.is_empty()
     {
         next_state.set(GameState::LevelComplete);
+    }
+}
+
+fn check_swarm_limit(
+    grid: Option<Res<LifeGrid>>,
+    config: Res<GameConfig>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    let Some(grid) = grid else { return };
+    if grid.alive_cells.len() >= config.swarm_limit {
+        next_state.set(GameState::GameOver);
     }
 }
 

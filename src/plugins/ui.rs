@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::components::gol::LifeCell;
 use crate::components::player::{BoostFuel, Boosting, Player};
 use crate::components::tail::TailChain;
+use crate::resources::game_config::GameConfig;
 use crate::resources::level_config::CurrentLevel;
 use crate::states::GameState;
 
@@ -214,14 +215,24 @@ fn update_hud(
     cells: Query<&LifeCell>,
     player: Query<(&TailChain, &BoostFuel, &Boosting), With<Player>>,
     mut player_sprite: Query<&mut Sprite, With<Player>>,
-    mut cell_text: Query<&mut Text, With<HudCellCount>>,
+    mut cell_text: Query<(&mut Text, &mut TextColor), With<HudCellCount>>,
     mut tail_text: Query<&mut Text, (With<HudTailLength>, Without<HudCellCount>)>,
     mut boost_fill: Query<&mut Node, With<HudBoostFill>>,
     mut boost_bg: Query<&mut BackgroundColor, With<HudBoostFill>>,
+    config: Res<GameConfig>,
 ) {
     let cell_count = cells.iter().count();
-    if let Ok(mut text) = cell_text.get_single_mut() {
-        **text = format!("Cells: {}", cell_count);
+    let limit = config.swarm_limit;
+    if let Ok((mut text, mut color)) = cell_text.get_single_mut() {
+        **text = format!("Cells: {} / {}", cell_count, limit);
+        let ratio = cell_count as f32 / limit as f32;
+        if ratio > 0.75 {
+            color.0 = Color::srgb(1.0, 0.2, 0.2); // Red — danger
+        } else if ratio > 0.5 {
+            color.0 = Color::srgb(1.0, 0.8, 0.0); // Yellow — warning
+        } else {
+            color.0 = Color::srgb(0.0, 1.0, 0.0); // Green — safe
+        }
     }
 
     if let Ok((chain, fuel, boosting)) = player.get_single() {

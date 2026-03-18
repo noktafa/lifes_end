@@ -22,6 +22,8 @@ pub struct GameConfig {
     pub arena_half_height: f32,
     pub bounce_damping: f32,
     pub safe_spawn_radius: f32,
+    // Swarm
+    pub swarm_limit: usize,
 }
 
 impl Default for GameConfig {
@@ -43,6 +45,7 @@ impl Default for GameConfig {
             arena_half_height: 350.0,
             bounce_damping: 0.8,
             safe_spawn_radius: 5.0,
+            swarm_limit: 100,
         }
     }
 }
